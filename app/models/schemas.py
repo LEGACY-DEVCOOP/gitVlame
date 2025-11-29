@@ -9,6 +9,11 @@ class BlameRequest(BaseModel):
     error_description: str
     date_range: int = 7
 
+class FileBlameRequest(BaseModel):
+    file_url: str                # "https://github.com/owner/repo/blob/branch/path/to/file.py"
+    error_description: str
+    commit_limit: int = 20
+
 class Suspect(BaseModel):
     author: str
     percentage: int
