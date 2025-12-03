@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="05cd131f-f9db-4153-a0f7-8ae74d23a897" name="변경" comment="refactor: claude-&gt;gemini로 변경" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="36A2aKxMChvBx7xmX7knyIa13ZG" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main 리베이스 중"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-a101402ee41c-968fe969f28a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.28238.29" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="디폴트 작업">
+      <changelist id="05cd131f-f9db-4153-a0f7-8ae74d23a897" name="변경" comment="" />
+      <created>1764435117711</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1764435117711</updated>
+    </task>
+    <task id="LOCAL-00001" summary="feat: 리드미 추가">
+      <option name="closed" value="true" />
+      <created>1764438295232</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1764438295232</updated>
+    </task>
+    <task id="LOCAL-00002" summary="feat: gitignore 추가">
+      <option name="closed" value="true" />
+      <created>1764438311562</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1764438311562</updated>
+    </task>
+    <task id="LOCAL-00003" summary="feat: 서비스로직 추가">
+      <option name="closed" value="true" />
+      <created>1764438330125</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1764438330125</updated>
+    </task>
+    <task id="LOCAL-00004" summary="feat: 모델 추가">
+      <option name="closed" value="true" />
+      <created>1764438342930</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1764438342930</updated>
+    </task>
+    <task id="LOCAL-00005" summary="feat: 깃허브 관련 라우터 추가">
+      <option name="closed" value="true" />
+      <created>1764438357803</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1764438357803</updated>
+    </task>
+    <task id="LOCAL-00006" summary="feat: 블레임(ai호출) 관련 라우터 추가">
+      <option name="closed" value="true" />
+      <created>1764438372046</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1764438372046</updated>
+    </task>
+    <task id="LOCAL-00007" summary="feat: 파일 url 기반 블레임과 커밋히스토리 분석 기능 추가">
+      <option name="closed" value="true" />
+      <created>1764438476608</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1764438476608</updated>
+    </task>
+    <task id="LOCAL-00008" summary="feat: 파일 관련 모델 추가">
+      <option name="closed" value="true" />
+      <created>1764438489778</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1764438489778</updated>
+    </task>
+    <task id="LOCAL-00009" summary="refactor: claude-&gt;gemini로 변경">
+      <option name="closed" value="true" />
+      <created>1764503663893</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1764503663893</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
+    <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="feat: 리드미 추가" />
+    <MESSAGE value="feat: gitignore 추가" />
+    <MESSAGE value="feat: 서비스로직 추가" />
+    <MESSAGE value="feat: 모델 추가" />
+    <MESSAGE value="feat: 깃허브 관련 라우터 추가" />
+    <MESSAGE value="feat: 블레임(ai호출) 관련 라우터 추가" />
+    <MESSAGE value="feat: 파일 url 기반 블레임과 커밋히스토리 분석 기능 추가" />
+    <MESSAGE value="feat: 파일 관련 모델 추가" />
+    <MESSAGE value="refactor: claude-&gt;gemini로 변경" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: claude-&gt;gemini로 변경" />
+  </component>
+</project>

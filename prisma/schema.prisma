@@ -1,0 +1,64 @@
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  github_id    String     @unique
+  username     String
+  avatar_url   String?
+  access_token String?
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+  judgments    Judgment[]
+}
+
+model Judgment {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.Uuid
+  repo_owner  String
+  repo_name   String
+  title       String
+  description String?
+  file_path   String?
+  period_days Int      @default(7)
+  status      String
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  suspects    Suspect[]
+  blame       Blame?
+}
+
+model Suspect {
+  id              String    @id @default(uuid()) @db.Uuid
+  judgment_id     String    @db.Uuid
+  username        String
+  avatar_url      String?
+  responsibility  Int
+  reason          String?
+  commit_count    Int?
+  last_commit_msg String?
+  last_commit_date DateTime?
+  judgment        Judgment  @relation(fields: [judgment_id], references: [id], onDelete: Cascade)
+}
+
+model Blame {
+  id              String   @id @default(uuid()) @db.Uuid
+  judgment_id     String   @unique @db.Uuid
+  target_username String
+  target_avatar   String?
+  responsibility  Int
+  reason          String?
+  message         String?
+  intensity       String   @default("medium")
+  image_url       String?
+  created_at      DateTime @default(now())
+  judgment        Judgment @relation(fields: [judgment_id], references: [id], onDelete: Cascade)
+}
