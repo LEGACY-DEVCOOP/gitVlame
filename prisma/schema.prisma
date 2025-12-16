@@ -30,6 +30,7 @@ model Judgment {
   file_path   String?
   period_days Int      @default(7)
   status      String
+  case_number String   @unique
   created_at  DateTime @default(now())
   user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   suspects    Suspect[]

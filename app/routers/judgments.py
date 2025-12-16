@@ -7,6 +7,8 @@ from app.models.schemas import JudgmentCreate, JudgmentResponse, JudgmentListRes
 from app.services.github_service import GitHubService
 from app.services.gemini_service import GeminiService
 from app.utils.exceptions import ForbiddenException
+import random
+import string
 
 router = APIRouter()
 
@@ -15,9 +17,16 @@ async def create_judgment(
     judgment_in: JudgmentCreate,
     current_user = Depends(get_current_user)
 ):
+    # Generate Case Number
+    year = datetime.now().year
+    # 3 groups of 4 digits
+    nums = [str(random.randint(1000, 9999)) for _ in range(3)]
+    case_number = f"{year}-{'-'.join(nums)}"
+    
     judgment = await db.judgment.create(
         data={
             "user_id": current_user.id,
+            "case_number": case_number,
             "repo_owner": judgment_in.repo_owner,
             "repo_name": judgment_in.repo_name,
             "title": judgment_in.title,
@@ -53,6 +62,7 @@ async def list_judgments(
     for j in judgments:
         items.append(JudgmentListResponse(
             id=j.id,
+            case_number=j.case_number,
             repo_name=j.repo_name,
             title=j.title,
             status=j.status,

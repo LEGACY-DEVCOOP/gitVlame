@@ -94,6 +94,7 @@ class BlameResponse(BaseModel):
 
 class JudgmentResponse(BaseModel):
     id: UUID
+    case_number: str
     repo_owner: str
     repo_name: str
     title: str
@@ -108,6 +109,7 @@ class JudgmentResponse(BaseModel):
 
 class JudgmentListResponse(BaseModel):
     id: UUID
+    case_number: str
     repo_name: str
     title: str
     status: str

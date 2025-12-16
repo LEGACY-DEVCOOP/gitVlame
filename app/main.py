@@ -69,7 +69,7 @@ async def gemini_api_exception_handler(request: Request, exc: GeminiAPIException
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(github.router, prefix="/github", tags=["github"])
 app.include_router(judgments.router, prefix="/judgments", tags=["judgments"])
-# app.include_router(blame.router, prefix="/judgments/{judgment_id}/blame", tags=["blame"]) # Note: prefix handled in router or here? Prompt said /judgments/{judgment_id}/blame
+app.include_router(blame.router, prefix="/judgments", tags=["blame"])
 # Let's check the prompt requirements for routers. 
 # Blame router endpoints start with /judgments/{judgment_id}/blame. 
 # I will include it without prefix here and define full paths in the router, or use a prefix. 
