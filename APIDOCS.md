@@ -1,105 +1,136 @@
-# GitVlame API Documentation
+# GitVlame API 명세서 (API Documentation)
 
-## Authentication (`/auth`)
+GitVlame의 백엔드 API 상세 명세서입니다. 모든 API 요청은 기본적으로 인증 토큰이 필요합니다 (로그인 제외).
 
-### 1. GitHub Login
+## 🔐 인증 (Authentication) - `/auth`
+
+### 1. GitHub 로그인
 - **URL**: `/auth/github/login`
 - **Method**: `GET`
-- **Description**: Redirects the user to GitHub's OAuth authorization page.
-- **Response**: `307 Temporary Redirect`
+- **설명**: 사용자를 GitHub OAuth 승인 페이지로 리다이렉트합니다.
+- **응답**: `307 Temporary Redirect` (GitHub 로그인 페이지로 이동)
 
-### 2. GitHub Callback
+### 2. GitHub 콜백 처리
 - **URL**: `/auth/github/callback`
 - **Method**: `GET`
-- **Query Params**: 
-  - `code`: GitHub authorization code
-- **Description**: Handles the callback from GitHub, exchanges code for token, creates/updates user, and returns JWT.
-- **Response**: Redirects to Frontend with `?token=JWT_TOKEN`
+- **Query Parameters**:
+  - `code`: GitHub에서 발급받은 승인 코드
+- **설명**: GitHub에서 리다이렉트된 후, 코드를 접근 토큰(Access Token)으로 교환하고 사용자를 생성/갱신합니다. JWT 토큰을 생성하여 프론트엔드로 전달합니다.
+- **응답**: 프론트엔드 URL로 리다이렉트 (`?token=JWT_TOKEN` 포함)
 
-### 3. Get Current User
+### 3. 내 정보 조회
 - **URL**: `/auth/me`
 - **Method**: `GET`
-- **Headers**: `Authorization: Bearer <token>`
-- **Response Keys**: `id`, `username`, `avatar_url`, `created_at`
+- **Headers**: `Authorization: Bearer <jwt_token>`
+- **설명**: 현재 로그인한 사용자의 정보를 반환합니다.
+- **응답 예시**:
+  ```json
+  {
+    "id": "uuid-string",
+    "username": "github-user",
+    "avatar_url": "https://avatars.githubusercontent.com/u/...",
+    "created_at": "2024-12-17T10:00:00"
+  }
+  ```
 
-### 4. Logout
+### 4. 로그아웃
 - **URL**: `/auth/logout`
 - **Method**: `POST`
-- **Description**: Logs out the user (Client should discard the token).
+- **설명**: 로그아웃 처리합니다. (클라이언트 측에서 토큰 삭제 필요)
 
 ---
 
-## GitHub Data (`/github`)
+## 🐙 GitHub 데이터 (GitHub Data) - `/github`
 
-### 5. List Repositories
+### 5. 레포지토리 목록 조회
 - **URL**: `/github/repos`
 - **Method**: `GET`
-- **Query Params**:
-  - `page` (default: 1)
-  - `per_page` (default: 30)
-  - `sort` (default: "updated")
-- **Description**: Lists repositories accessible by the logged-in user.
+- **Query Parameters**:
+  - `page`: 페이지 번호 (기본값: 1)
+  - `per_page`: 페이지당 개수 (기본값: 30)
+  - `sort`: 정렬 기준 (기본값: "updated")
+- **설명**: 로그인한 사용자가 접근 가능한 레포지토리 목록을 가져옵니다.
 
-### 6. Get Contributors
+### 6. 레포지토리 기여자 조회
 - **URL**: `/github/repos/{owner}/{repo}/contributors`
 - **Method**: `GET`
-- **Description**: Gets contribution statistics for a repository.
+- **설명**: 특정 레포지토리의 기여자(Contributor) 목록과 기여 통계를 반환합니다.
 
-### 7. Get Commits
+### 7. 커밋 기록 조회
 - **URL**: `/github/repos/{owner}/{repo}/commits`
 - **Method**: `GET`
-- **Query Params**:
-  - `path`: Filter by file path
-  - `since`: Filter by date (ISO string)
-- **Description**: Lists recent commits, optionally filtered by file path.
+- **Query Parameters**:
+  - `path`: (선택) 특정 파일 경로로 필터링
+  - `since`: (선택) 조회 시작 날짜 (ISO 8601 형식)
+  - `per_page`: (선택) 가져올 커밋 수
+- **설명**: 레포지토리의 커밋 히스토리를 반환합니다. `path` 파라미터를 사용하여 특정 파일의 변경 이력만 조회할 수 있습니다.
 
 ---
 
-## Judgments (Complaints) (`/judgments`)
+## ⚖️ 판결 및 고소 (Judgments) - `/judgments`
 
-### 8. Create Judgment (File Complaint)
+### 8. 고소장 접수 (판결 생성)
 - **URL**: `/judgments`
 - **Method**: `POST`
 - **Body**:
   ```json
   {
-    "repo_owner": "string",
-    "repo_name": "string",
-    "title": "string",
-    "description": "string",
-    "file_path": "string",
+    "repo_owner": "owner_name",
+    "repo_name": "repo_name",
+    "title": "사건 제목 (예: 메인 페이지 렌더링 버그)",
+    "description": "버그 상세 내용",
+    "file_path": "src/App.tsx",
     "period_days": 7
   }
   ```
-- **Description**: Creates a new judgment case against a specific file/feature.
-- **Response**: Created Judgment object with `case_number` (YYYY-XXXX-XXXX-XXXX).
+- **설명**: 특정 파일이나 기능에 대한 고소장(판결 요청)을 생성합니다. 자동으로 `YYYY-XXXX...` 형식의 사건 번호가 부여됩니다.
+- **응답**: 생성된 판결 객체 (사건 번호 포함)
 
-### 9. List Judgments
+### 9. 판결 목록 조회
 - **URL**: `/judgments`
 - **Method**: `GET`
-- **Query Params**: `status`, `page`, `per_page`
-- **Description**: Lists judgments filed by the current user.
+- **Query Parameters**:
+  - `status`: (선택) `pending` 또는 `completed`
+  - `page`: 페이지 번호
+  - `per_page`: 페이지당 개수
+- **설명**: 사용자가 접수한 모든 판결 목록을 조회합니다.
 
-### 10. Get Judgment Detail
+### 10. 판결 상세 조회
 - **URL**: `/judgments/{judgment_id}`
 - **Method**: `GET`
-- **Description**: Gets detailed info including suspects and blame results.
+- **설명**: 특정 판결의 상세 정보, 사건 번호, 용의자 목록(Suspects), 최종 판결(Blame) 정보를 모두 반환합니다.
 
-### 11. Analyze Suspects (AI)
+### 11. 🔍 용의자 분석 (AI Analysis)
 - **URL**: `/judgments/{judgment_id}/analyze`
 - **Method**: `POST`
-- **Description**: **[Core Feature]** Triggers Gemini AI to analyze commit history, identify suspects, and calculate responsibility ratios.
-- **Response**: Judgment object with populated `suspects` list.
+- **설명**: **[핵심 기능]** Gemini AI를 사용하여 관련 커밋 기록을 분석하고, 각 개발자의 책임 비율(Responsibility)과 사유를 도출합니다.
+- **응답 예시**:
+  ```json
+  {
+    "id": "...",
+    "status": "completed",
+    "suspects": [
+      {
+        "username": "bug_maker",
+        "responsibility": 80,
+        "reason": "해당 파일의 최근 20개 커밋 중 15개를 작성함.",
+        "last_commit_msg": "fix: attempt to fix bug"
+      },
+      ...
+    ]
+  }
+  ```
 
-### 12. Delete Judgment
+### 12. 판결 삭제
 - **URL**: `/judgments/{judgment_id}`
 - **Method**: `DELETE`
+- **설명**: 접수된 판결을 삭제합니다.
 
 ---
 
-## Blame & Verdict (`/judgments/{judgment_id}/blame`)
+## 🔥 처벌 및 판결문 (Blame & Verdict) - `/judgments/.../blame`
 
-### 13. Create Blame Verdict
+### 13. 최종 판결 내리기 (Blame 생성)
 - **URL**: `/judgments/{judgment_id}/blame`
 - **Method**: `POST`
 - **Body**:
@@ -108,47 +139,60 @@
     "intensity": "mild" | "medium" | "spicy"
   }
   ```
-- **Description**: Generates a final verdict message for the main suspect using AI.
-  - `mild`: Polite request
-  - `medium`: Humorous/Witty
-  - `spicy`: Direct/Aggressive
-- **Response**: Blame object with generated `message`.
+- **설명**: 가장 책임이 큰 용의자(Main Suspect)를 선정하고, 선택한 강도에 따라 AI가 판결 메시지를 생성합니다.
+  - `mild` (순한맛): 정중한 수정 요청
+  - `medium` (중간맛): 유머러스한 지적
+  - `spicy` (매운맛): 강력하고 직설적인 비난(재미 위주)
+- **응답**: 생성된 Blame 객체 (AI 메시지 포함)
 
-### 14. Get Blame Verdict
+### 14. 판결 결과 조회
 - **URL**: `/judgments/{judgment_id}/blame`
 - **Method**: `GET`
-- **Description**: Gets the existing verdict.
+- **설명**: 이미 생성된 판결 결과를 조회합니다.
 
-### 15. Generate Blame Image
+### 15. 📷 판결문 이미지 생성
 - **URL**: `/judgments/{judgment_id}/blame/image`
 - **Method**: `POST`
-- **Description**: Generates a shareable card image with the verdict and suspect's avatar.
-- **Response**: `{"image_url": "..."}`
+- **설명**: 판결 내용, 범인의 아바타, 책임 비율 등이 포함된 **시각적인 판결문 카드 이미지**를 생성하여 Supabase Storage에 업로드합니다.
+- **응답**:
+  ```json
+  {
+    "image_url": "https://supabase.../blame-images/....png"
+  }
+  ```
 
 ---
 
-## Models
+## 📦 데이터 모델 (Models)
 
-### User
-- `id`: UUID
-- `username`: String
-- `avatar_url`: String
+### User (사용자)
+| 필드명 | 타입 | 설명 |
+|---|---|---|
+| `id` | UUID | 사용자 고유 ID |
+| `username` | String | GitHub 사용자명 |
+| `avatar_url` | String | 프로필 이미지 URL |
 
-### Judgment
-- `id`: UUID
-- `case_number`: String (Unique)
-- `repo_name`: String
-- `title`: String
-- `status`: "pending" | "completed"
-- `suspects`: List[Suspect]
+### Judgment (판결/고소장)
+| 필드명 | 타입 | 설명 |
+|---|---|---|
+| `id` | UUID | 판결 고유 ID |
+| `case_number` | String | **사건 번호** (예: 2024-1234-5678) |
+| `repo_name` | String | 레포지토리 이름 |
+| `title` | String | 사건(버그) 제목 |
+| `status` | String | `pending`(분석전), `completed`(분석완료) |
+| `suspects` | List | 용의자 목록 포함 |
 
-### Suspect
-- `username`: String
-- `responsibility`: Integer (0-100)
-- `reason`: String (AI generated reason)
+### Suspect (용의자)
+| 필드명 | 타입 | 설명 |
+|---|---|---|
+| `username` | String | 용의자 GitHub ID |
+| `responsibility` | Integer | **책임 비율 (0-100%)** |
+| `reason` | String | AI가 분석한 지목 사유 |
 
-### Blame
-- `target_username`: String
-- `message`: String (AI generated message)
-- `intensity`: String
-- `image_url`: String
+### Blame (최종 판결)
+| 필드명 | 타입 | 설명 |
+|---|---|---|
+| `target_username` | String | 최종 범인 |
+| `message` | String | **AI 판결 메시지** |
+| `intensity` | String | 메시지 강도 (mild/medium/spicy) |
+| `image_url` | String | 판결문 이미지 URL |
