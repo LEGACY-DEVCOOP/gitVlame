@@ -27,7 +27,7 @@ async def github_login():
 @router.get("/github/callback")
 async def github_callback(code: str):
     # Exchange code for access token
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         token_res = await client.post(
             "https://github.com/login/oauth/access_token",
             headers={"Accept": "application/json"},
@@ -79,7 +79,8 @@ async def github_callback(code: str):
         token = create_jwt_token(user.id, user.username)
         
         # Redirect to frontend
-        return RedirectResponse(f"{settings.FRONTEND_URL}/auth/callback?token={token}")
+        # Redirect to frontend root with token
+        return RedirectResponse(f"{settings.FRONTEND_URL}?token={token}")
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user = Depends(get_current_user)):

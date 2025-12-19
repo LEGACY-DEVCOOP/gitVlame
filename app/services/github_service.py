@@ -14,7 +14,7 @@ class GitHubService:
         }
 
     async def _request(self, method: str, url: str, params: dict = None):
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.request(method, url, headers=self.headers, params=params)
             
             # Rate limit logging (simplified)
@@ -29,6 +29,44 @@ class GitHubService:
             
             response.raise_for_status()
             return response.json()
+
+    async def _request_paginated(self, method: str, url: str, params: dict = None, max_pages: int = 10):
+        """Fetch all pages from a paginated endpoint"""
+        all_results = []
+        page = 1
+        
+        # Copy params to avoid mutation
+        request_params = params.copy() if params else {}
+        
+        while page <= max_pages:
+            request_params['page'] = page
+            request_params.setdefault('per_page', 100)
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.request(method, url, headers=self.headers, params=request_params)
+                
+                if response.status_code in (401, 403):
+                    raise GitHubAPIException(f"GitHub API Auth Error: {response.status_code}")
+                if response.status_code == 404:
+                    raise GitHubAPIException(f"GitHub Resource Not Found: {url}")
+                if response.status_code >= 500:
+                    raise GitHubAPIException(f"GitHub API Server Error: {response.status_code}")
+                
+                response.raise_for_status()
+                data = response.json()
+                
+                if not data or not isinstance(data, list):
+                    break
+                    
+                all_results.extend(data)
+                
+                # Check if there are more pages
+                if len(data) < request_params['per_page']:
+                    break
+                    
+                page += 1
+        
+        return all_results
 
     async def get_user_repos(self, page: int = 1, per_page: int = 30, sort: str = "updated") -> dict:
         url = f"{self.BASE_URL}/user/repos"
@@ -50,7 +88,7 @@ class GitHubService:
     async def get_repo_contributors(self, owner: str, repo: str) -> dict:
         # Get contributors list
         url = f"{self.BASE_URL}/repos/{owner}/{repo}/contributors"
-        contributors_data = await self._request("GET", url)
+        contributors_data = await self._request_paginated("GET", url)
         
         # Get stats for more detailed info (optional, but requested "commits", "additions", "deletions")
         # /stats/contributors returns weekly hash, might be heavy.
@@ -112,7 +150,7 @@ class GitHubService:
         if since: params["since"] = since
         if until: params["until"] = until
         
-        commits_data = await self._request("GET", url, params)
+        commits_data = await self._request_paginated("GET", url, params)
         
         commits = []
         for c in commits_data:
