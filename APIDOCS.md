@@ -65,11 +65,45 @@ GitVlame의 백엔드 API 상세 명세서입니다. 모든 API 요청은 기본
   - `per_page`: (선택) 가져올 커밋 수
 - **설명**: 레포지토리의 커밋 히스토리를 반환합니다. `path` 파라미터를 사용하여 특정 파일의 변경 이력만 조회할 수 있습니다.
 
+### 8. 레포지토리 파일 트리 조회
+- **URL**: `/github/repos/{owner}/{repo}/tree`
+- **Method**: `GET`
+- **Query Parameters**:
+  - `branch`: (선택) 브랜치 이름 (기본값: "main")
+- **설명**: 레포지토리의 전체 파일 및 디렉토리 구조를 재귀적으로 가져옵니다. `main` 브랜치가 없을 경우 자동으로 `master` 브랜치를 시도합니다.
+- **응답 예시**:
+  ```json
+  {
+    "sha": "abc123...",
+    "url": "https://api.github.com/repos/owner/repo/git/trees/main",
+    "tree": [
+      {
+        "path": "src/main.py",
+        "type": "blob",
+        "sha": "def456...",
+        "size": 1234,
+        "url": "https://api.github.com/..."
+      },
+      {
+        "path": "src/utils",
+        "type": "tree",
+        "sha": "ghi789...",
+        "size": null,
+        "url": "https://api.github.com/..."
+      }
+    ],
+    "truncated": false
+  }
+  ```
+- **참고**:
+  - `type`이 `"blob"`인 경우 파일, `"tree"`인 경우 디렉토리입니다.
+  - `truncated`가 `true`이면 결과가 잘렸음을 의미합니다 (대용량 레포지토리의 경우).
+
 ---
 
 ## ⚖️ 판결 및 고소 (Judgments) - `/judgments`
 
-### 8. 고소장 접수 (판결 생성)
+### 9. 고소장 접수 (판결 생성)
 - **URL**: `/judgments`
 - **Method**: `POST`
 - **Body**:
@@ -86,21 +120,21 @@ GitVlame의 백엔드 API 상세 명세서입니다. 모든 API 요청은 기본
 - **설명**: 특정 파일이나 기능에 대한 고소장(판결 요청)을 생성합니다. 자동으로 `YYYY-XXXX...` 형식의 사건 번호가 부여됩니다.
 - **응답**: 생성된 판결 객체 (사건 번호 포함)
 
-### 9. 판결 목록 조회
+### 10. 판결 목록 조회
 - **URL**: `/judgments`
 - **Method**: `GET`
-- **Query Parameters**:
+- **Query Parameters**: 
   - `status`: (선택) `pending` 또는 `completed`
   - `page`: 페이지 번호
   - `per_page`: 페이지당 개수
 - **설명**: 사용자가 접수한 모든 판결 목록을 조회합니다.
 
-### 10. 판결 상세 조회
+### 11. 판결 상세 조회
 - **URL**: `/judgments/{judgment_id}`
 - **Method**: `GET`
 - **설명**: 특정 판결의 상세 정보, 사건 번호, 용의자 목록(Suspects), 최종 판결(Blame) 정보를 모두 반환합니다.
 
-### 11. 🔍 용의자 분석 (AI Analysis)
+### 12. 🔍 용의자 분석 (AI Analysis)
 - **URL**: `/judgments/{judgment_id}/analyze`
 - **Method**: `POST`
 - **설명**: **[핵심 기능]** Gemini AI를 사용하여 관련 커밋 기록을 분석하고, 각 개발자의 책임 비율(Responsibility)과 사유를 도출합니다.
@@ -121,7 +155,7 @@ GitVlame의 백엔드 API 상세 명세서입니다. 모든 API 요청은 기본
   }
   ```
 
-### 12. 판결 삭제
+### 13. 판결 삭제
 - **URL**: `/judgments/{judgment_id}`
 - **Method**: `DELETE`
 - **설명**: 접수된 판결을 삭제합니다.
@@ -130,7 +164,7 @@ GitVlame의 백엔드 API 상세 명세서입니다. 모든 API 요청은 기본
 
 ## 🔥 처벌 및 판결문 (Blame & Verdict) - `/judgments/.../blame`
 
-### 13. 최종 판결 내리기 (Blame 생성)
+### 14. 최종 판결 내리기 (Blame 생성)
 - **URL**: `/judgments/{judgment_id}/blame`
 - **Method**: `POST`
 - **Body**:
@@ -145,12 +179,12 @@ GitVlame의 백엔드 API 상세 명세서입니다. 모든 API 요청은 기본
   - `spicy` (매운맛): 강력하고 직설적인 비난(재미 위주)
 - **응답**: 생성된 Blame 객체 (AI 메시지 포함)
 
-### 14. 판결 결과 조회
+### 15. 판결 결과 조회
 - **URL**: `/judgments/{judgment_id}/blame`
 - **Method**: `GET`
 - **설명**: 이미 생성된 판결 결과를 조회합니다.
 
-### 15. 📷 판결문 이미지 생성
+### 16. 📷 판결문 이미지 생성
 - **URL**: `/judgments/{judgment_id}/blame/image`
 - **Method**: `POST`
 - **설명**: 판결 내용, 범인의 아바타, 책임 비율 등이 포함된 **시각적인 판결문 카드 이미지**를 생성하여 Supabase Storage에 업로드합니다.

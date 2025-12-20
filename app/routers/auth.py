@@ -20,8 +20,11 @@ def create_jwt_token(user_id: str, username: str) -> str:
 
 @router.get("/github/login")
 async def github_login():
+    # read:user - 사용자 정보
+    # repo - private/public 레포 접근
+    # read:org - organization 멤버십 확인 및 org repos 접근
     return RedirectResponse(
-        f"https://github.com/login/oauth/authorize?client_id={settings.GITHUB_CLIENT_ID}&scope=read:user,repo"
+        f"https://github.com/login/oauth/authorize?client_id={settings.GITHUB_CLIENT_ID}&scope=read:user,repo,read:org"
     )
 
 @router.get("/github/callback")

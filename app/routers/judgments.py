@@ -34,7 +34,8 @@ async def create_judgment(
             "file_path": judgment_in.file_path,
             "period_days": judgment_in.period_days,
             "status": "pending",
-        }
+        },
+        include={"suspects": True, "blame": True}
     )
     return judgment
 

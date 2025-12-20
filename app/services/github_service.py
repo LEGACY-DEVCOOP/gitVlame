@@ -1,6 +1,6 @@
 import httpx
 from typing import List, Optional
-from app.models.schemas import RepoResponse, ContributorResponse, CommitResponse, CommitAuthor
+from app.models.schemas import RepoResponse, ContributorResponse, CommitResponse, CommitAuthor, FileTreeResponse, FileTreeItem
 from app.utils.exceptions import GitHubAPIException
 
 class GitHubService:
@@ -68,22 +68,53 @@ class GitHubService:
         
         return all_results
 
-    async def get_user_repos(self, page: int = 1, per_page: int = 30, sort: str = "updated") -> dict:
-        url = f"{self.BASE_URL}/user/repos"
-        params = {"page": page, "per_page": per_page, "sort": sort}
-        repos_data = await self._request("GET", url, params)
+    async def get_user_repos(self, page: int = 1, per_page: int = 100, sort: str = "updated") -> dict:
+        # 1. 사용자의 개인 및 협업 레포지토리 (기본)
+        user_repos_url = f"{self.BASE_URL}/user/repos"
+        params = {
+            "sort": sort,
+            "affiliation": "owner,collaborator,organization_member",
+            "per_page": 100
+        }
         
-        # Note: GitHub API doesn't return total count in response body for this endpoint easily without pagination traversal or header parsing.
-        # For simplicity, we might just return the list or check 'Link' header for total pages.
-        # The prompt asks for { "repos": List[RepoResponse], "total_count": int }
-        # We'll approximate or just return what we have.
+        # 전체를 다 가져오기 위해 paginated 요청 사용 (최대 500개까지)
+        repos_data = await self._request_paginated("GET", user_repos_url, params, max_pages=5)
+        
+        # 2. 명시적으로 조직 레포지토리들을 더 확인 (혹시 누락된 것들 대비)
+        try:
+            orgs_url = f"{self.BASE_URL}/user/orgs"
+            orgs_data = await self._request("GET", orgs_url)
+            
+            for org in orgs_data:
+                org_name = org['login']
+                org_repos_url = f"{self.BASE_URL}/orgs/{org_name}/repos"
+                try:
+                    # 해당 조직의 레포지토리 목록 명시적 호출
+                    org_repos = await self._request_paginated("GET", org_repos_url, {"per_page": 100}, max_pages=3)
+                    
+                    # 중복 제거하며 추가
+                    existing_ids = {r['id'] for r in repos_data}
+                    for r in org_repos:
+                        if r['id'] not in existing_ids:
+                            repos_data.append(r)
+                except:
+                    continue 
+        except:
+            pass 
+            
+        # 정렬 (수정일 순)
+        repos_data.sort(key=lambda x: x.get('updated_at', ''), reverse=True)
+        
+        # 페이지네이션 처리 (반환용)
+        start = (page - 1) * per_page
+        end = start + per_page
+        paginated_repos = repos_data[start:end]
         
         repos = []
-        for r in repos_data:
-            # Map fields if necessary, or let Pydantic handle it with aliases
+        for r in paginated_repos:
             repos.append(RepoResponse.model_validate(r))
             
-        return {"repos": repos, "total_count": len(repos)} # Total count is tricky without extra calls
+        return {"repos": repos, "total_count": len(repos_data)}
 
     async def get_repo_contributors(self, owner: str, repo: str) -> dict:
         # Get contributors list
@@ -173,9 +204,53 @@ class GitHubService:
     async def get_commit_detail(self, owner: str, repo: str, sha: str) -> dict:
         url = f"{self.BASE_URL}/repos/{owner}/{repo}/commits/{sha}"
         data = await self._request("GET", url)
-        
+
         stats = data.get('stats', {})
         return {
             "additions": stats.get('additions', 0),
             "deletions": stats.get('deletions', 0)
         }
+
+    async def get_repo_tree(self, owner: str, repo: str, branch: str = "main") -> FileTreeResponse:
+        """
+        Get the file tree for a repository
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            branch: Branch name (default: "main")
+
+        Returns:
+            FileTreeResponse containing the file tree
+        """
+        # First, get the branch to find the tree SHA
+        url = f"{self.BASE_URL}/repos/{owner}/{repo}/git/trees/{branch}"
+
+        try:
+            # Try with the specified branch
+            data = await self._request("GET", url, params={"recursive": "1"})
+        except GitHubAPIException as e:
+            # If branch not found, try with "master"
+            if "404" in str(e) and branch == "main":
+                url = f"{self.BASE_URL}/repos/{owner}/{repo}/git/trees/master"
+                data = await self._request("GET", url, params={"recursive": "1"})
+            else:
+                raise
+
+        # Parse the tree items
+        tree_items = []
+        for item in data.get("tree", []):
+            tree_items.append(FileTreeItem(
+                path=item["path"],
+                type=item["type"],
+                sha=item["sha"],
+                size=item.get("size"),
+                url=item["url"]
+            ))
+
+        return FileTreeResponse(
+            sha=data["sha"],
+            url=data["url"],
+            tree=tree_items,
+            truncated=data.get("truncated", False)
+        )

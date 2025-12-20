@@ -60,6 +60,21 @@ class CommitResponse(BaseModel):
     deletions: Optional[int] = None
     model_config = ConfigDict(from_attributes=True)
 
+class FileTreeItem(BaseModel):
+    path: str
+    type: Literal["blob", "tree"]  # blob = file, tree = directory
+    sha: str
+    size: Optional[int] = None
+    url: str
+    model_config = ConfigDict(from_attributes=True)
+
+class FileTreeResponse(BaseModel):
+    sha: str
+    url: str
+    tree: List[FileTreeItem]
+    truncated: bool
+    model_config = ConfigDict(from_attributes=True)
+
 # Judgment
 class JudgmentCreate(BaseModel):
     repo_owner: str

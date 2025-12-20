@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from typing import List
 from app.dependencies import get_current_user
 from app.services.github_service import GitHubService
-from app.models.schemas import RepoResponse, ContributorResponse, CommitResponse, PaginatedResponse
+from app.models.schemas import RepoResponse, ContributorResponse, CommitResponse, PaginatedResponse, FileTreeResponse
 
 router = APIRouter()
 
@@ -45,4 +45,24 @@ async def get_commits(
 ):
     service = GitHubService(current_user.access_token)
     result = await service.get_repo_commits(owner, repo, path, since, until, per_page)
+    return result
+
+@router.get("/repos/{owner}/{repo}/tree", response_model=FileTreeResponse)
+async def get_repo_tree(
+    owner: str,
+    repo: str,
+    branch: str = "main",
+    current_user = Depends(get_current_user)
+):
+    """
+    Get the file tree for a repository
+
+    - **owner**: Repository owner
+    - **repo**: Repository name
+    - **branch**: Branch name (default: "main")
+
+    Returns a recursive file tree with all files and directories
+    """
+    service = GitHubService(current_user.access_token)
+    result = await service.get_repo_tree(owner, repo, branch)
     return result
