@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import db
 from app.dependencies import get_current_user
-from app.models.schemas import BlameCreate, BlameResponse
+from app.models.schemas import BlameCreate, BlameResponse, BlameMessages
 from app.services.claude_service import ClaudeService
 from app.services.image_service import ImageService
 from app.utils.exceptions import ForbiddenException
@@ -74,21 +74,25 @@ async def create_blame(
         }
     )
 
-    # Parse messages back to dict for response
-    parsed_messages = json.loads(blame.message) if blame.message else {"mild": [], "medium": [], "spicy": []}
+    # Safely parse messages and construct the response model instance
+    parsed_messages = {"mild": [], "medium": [], "spicy": []}
+    if blame.message and isinstance(blame.message, str):
+        try:
+            parsed_messages = json.loads(blame.message)
+        except json.JSONDecodeError:
+            # Data is corrupt, use default empty messages
+            pass
 
-    # Create custom response
-    from app.models.schemas import BlameMessages
-    return {
-        "id": blame.id,
-        "target_username": blame.target_username,
-        "target_avatar": blame.target_avatar,
-        "responsibility": blame.responsibility,
-        "reason": blame.reason,
-        "messages": BlameMessages(**parsed_messages),
-        "image_url": blame.image_url,
-        "created_at": blame.created_at
-    }
+    return BlameResponse(
+        id=blame.id,
+        target_username=blame.target_username,
+        target_avatar=blame.target_avatar,
+        responsibility=blame.responsibility,
+        reason=blame.reason,
+        messages=BlameMessages(**parsed_messages),
+        image_url=blame.image_url,
+        created_at=blame.created_at
+    )
 
 @router.get("/{judgment_id}/blame", response_model=BlameResponse)
 async def get_blame(
@@ -104,25 +108,25 @@ async def get_blame(
     if judgment.user_id != current_user.id:
         raise ForbiddenException()
 
-    # Parse message from JSON string to dict
-    try:
-        parsed_messages = json.loads(blame.message) if blame.message else {"mild": [], "medium": [], "spicy": []}
-    except:
-        # Old format - single message string
-        parsed_messages = {"mild": [blame.message], "medium": [blame.message], "spicy": [blame.message]}
+    # Safely parse message and construct the response model instance
+    parsed_messages = {"mild": [], "medium": [], "spicy": []}
+    if blame.message and isinstance(blame.message, str):
+        try:
+            parsed_messages = json.loads(blame.message)
+        except json.JSONDecodeError:
+            # Data is corrupt, use default empty messages
+            pass
 
-    # Create custom response
-    from app.models.schemas import BlameMessages
-    return {
-        "id": blame.id,
-        "target_username": blame.target_username,
-        "target_avatar": blame.target_avatar,
-        "responsibility": blame.responsibility,
-        "reason": blame.reason,
-        "messages": BlameMessages(**parsed_messages),
-        "image_url": blame.image_url,
-        "created_at": blame.created_at
-    }
+    return BlameResponse(
+        id=blame.id,
+        target_username=blame.target_username,
+        target_avatar=blame.target_avatar,
+        responsibility=blame.responsibility,
+        reason=blame.reason,
+        messages=BlameMessages(**parsed_messages),
+        image_url=blame.image_url,
+        created_at=blame.created_at
+    )
 
 @router.post("/{judgment_id}/blame/image")
 async def generate_blame_image(

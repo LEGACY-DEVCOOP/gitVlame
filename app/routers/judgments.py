@@ -79,7 +79,7 @@ async def list_judgments(
     )
 
 # Need to import PaginatedResponse here or move it to common
-from app.models.schemas import PaginatedResponse
+from app.models.schemas import PaginatedResponse, BlameMessages
 import json
 
 @router.get("/{judgment_id}", response_model=JudgmentResponse)
@@ -98,10 +98,26 @@ async def get_judgment(
     if judgment.user_id != current_user.id:
         raise ForbiddenException()
 
-    # Manually parse the json string in message field into messages field
-    if judgment.blame and hasattr(judgment.blame, 'message') and isinstance(judgment.blame.message, str):
-        judgment.blame.messages = json.loads(judgment.blame.message)
-        
+    if judgment.blame:
+        # If blame object exists, we MUST provide a `messages` field for the response model.
+        if hasattr(judgment.blame, 'message') and isinstance(judgment.blame.message, str):
+            try:
+                judgment.blame.messages = json.loads(judgment.blame.message)
+            except json.JSONDecodeError:
+                # Handle invalid JSON
+                judgment.blame.messages = BlameMessages(
+                    mild=["[메시지 파싱 오류]"],
+                    medium=["[메시지 파싱 오류]"],
+                    spicy=["[메시지 파싱 오류]"]
+                )
+        else:
+            # Handle missing or non-string `message` field
+            judgment.blame.messages = BlameMessages(
+                mild=["[메시지 없음]"],
+                medium=["[메시지 없음]"],
+                spicy=["[메시지 없음]"]
+            )
+            
     return judgment
 
 @router.post("/{judgment_id}/analyze", response_model=JudgmentResponse)
