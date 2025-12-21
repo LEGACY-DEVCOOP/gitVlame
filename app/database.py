@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 db: Optional["Prisma"] = None
+PrismaType = Optional["Prisma"]
 
 def _generate_prisma_client() -> None:
     """
@@ -50,16 +51,47 @@ def _ensure_prisma_client():
     if db is not None:
         return db
 
+    PrismaClass = None
+    # Prefer vendored client generated into the repo (app/prisma_client).
     try:
-        from prisma import Prisma
+        from app.prisma_client import Prisma as VendoredPrisma  # type: ignore
+
+        PrismaClass = VendoredPrisma
+    except Exception:
+        PrismaClass = None
+
+    allow_runtime_generate = os.environ.get("PRISMA_GENERATE_AT_RUNTIME", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+    try:
+        if PrismaClass is None:
+            from prisma import Prisma as InstalledPrisma  # type: ignore
+
+            PrismaClass = InstalledPrisma
     except RuntimeError as exc:
         if "hasn't been generated yet" in str(exc):
+            if not allow_runtime_generate:
+                raise RuntimeError(
+                    "Prisma client is missing. Run `prisma generate` during build or set "
+                    "PRISMA_GENERATE_AT_RUNTIME=1 to allow runtime generation (not recommended on read-only/serverless)."
+                ) from exc
             _generate_prisma_client()
-            from prisma import Prisma  # re-import after generation
+            from prisma import Prisma as InstalledPrisma  # re-import after generation
+
+            PrismaClass = InstalledPrisma
         else:
             raise
 
-    db = Prisma()
+    if PrismaClass is None:
+        raise RuntimeError(
+            "Prisma client module not found. Ensure `prisma generate` wrote to app/prisma_client "
+            "or that the default prisma package is installed."
+        )
+
+    db = PrismaClass()
     return db
 
 
