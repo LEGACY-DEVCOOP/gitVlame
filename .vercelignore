@@ -1,0 +1,10 @@
+.venv
+venv
+ven
+.env
+.env.*
+*.log
+__pycache__
+.pytest_cache
+.DS_Store
+node_modules
