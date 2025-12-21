@@ -136,7 +136,8 @@ async def analyze_judgment(
             "author": c.author.username,
             "date": c.date.isoformat(),
             "additions": c.additions,
-            "deletions": c.deletions
+            "deletions": c.deletions,
+            "diff": c.diff
         })
         
     # 2. Claude Analysis

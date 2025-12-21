@@ -174,41 +174,61 @@ class GitHubService:
                 
         return {"contributors": contributors, "total_commits": total_commits}
 
-    async def get_repo_commits(self, owner: str, repo: str, path: str = None, since: str = None, until: str = None, per_page: int = 100) -> dict:
+    async def get_repo_commits(self, owner: str, repo: str, path: str = None, since: str = None, until: str = None, per_page: int = 30) -> dict:
         url = f"{self.BASE_URL}/repos/{owner}/{repo}/commits"
+        # We limit per_page to 30, as we will be making a detail call for each, to avoid hitting rate limits quickly.
         params = {"per_page": per_page}
         if path: params["path"] = path
         if since: params["since"] = since
         if until: params["until"] = until
         
-        commits_data = await self._request_paginated("GET", url, params)
+        # Note: This gets a summary. We need to call get_commit_detail for each to get diffs.
+        commits_data = await self._request_paginated("GET", url, params, max_pages=1) # Limit to 1 page (30 commits) for performance
         
         commits = []
-        for c in commits_data:
-            author = c.get('author') or c.get('commit', {}).get('author')
-            # Sometimes author is null if not linked to GitHub user, fallback to commit.author.name
-            username = author.get('login') if author else c['commit']['author']['name']
-            avatar_url = author.get('avatar_url') if author else ""
-            
-            commits.append(CommitResponse(
-                sha=c['sha'],
-                message=c['commit']['message'],
-                author=CommitAuthor(username=username, avatar_url=avatar_url),
-                date=c['commit']['author']['date'],
-                additions=0, # Detail needed
-                deletions=0
-            ))
+        for c_summary in commits_data:
+            try:
+                # Get detailed info for each commit, including diff
+                detail = await self.get_commit_detail(owner, repo, c_summary['sha'], path)
+
+                author = c_summary.get('author') or c_summary.get('commit', {}).get('author')
+                username = author.get('login') if author else c_summary['commit']['author']['name']
+                avatar_url = author.get('avatar_url') if author else ""
+                
+                commits.append(CommitResponse(
+                    sha=c_summary['sha'],
+                    message=c_summary['commit']['message'],
+                    author=CommitAuthor(username=username, avatar_url=avatar_url),
+                    date=c_summary['commit']['author']['date'],
+                    additions=detail['additions'],
+                    deletions=detail['deletions'],
+                    diff=detail['diff']
+                ))
+            except GitHubAPIException:
+                # If a single commit detail fails, we can skip it and continue
+                continue
             
         return {"commits": commits}
 
-    async def get_commit_detail(self, owner: str, repo: str, sha: str) -> dict:
+    async def get_commit_detail(self, owner: str, repo: str, sha: str, file_path: str = None) -> dict:
         url = f"{self.BASE_URL}/repos/{owner}/{repo}/commits/{sha}"
         data = await self._request("GET", url)
 
         stats = data.get('stats', {})
+        diff = None
+        
+        # If a specific file_path is provided, find the diff for that file
+        if file_path and 'files' in data:
+            for file in data['files']:
+                if file['filename'] == file_path:
+                    diff = file.get('patch')
+                    break
+        # If no file_path, maybe return the combined diff? For now, None.
+        
         return {
             "additions": stats.get('additions', 0),
-            "deletions": stats.get('deletions', 0)
+            "deletions": stats.get('deletions', 0),
+            "diff": diff
         }
 
     async def get_repo_tree(self, owner: str, repo: str, branch: str = "main") -> FileTreeResponse:

@@ -58,6 +58,7 @@ class CommitResponse(BaseModel):
     date: datetime
     additions: Optional[int] = None
     deletions: Optional[int] = None
+    diff: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 class FileTreeItem(BaseModel):
