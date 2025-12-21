@@ -1,5 +1,7 @@
+import os
 import subprocess
 import sys
+from pathlib import Path
 from typing import Optional
 
 db: Optional["Prisma"] = None
@@ -9,10 +11,19 @@ def _generate_prisma_client() -> None:
     Generate the Prisma client even when the CLI shim isn't on PATH.
     Tries the standard entrypoint first, then falls back to `python -m prisma`.
     """
+    # Lambda/Edge filesystems are often read-only outside /tmp, so redirect Prisma caches there.
+    env = os.environ.copy()
+    cache_root = Path(env.get("XDG_CACHE_HOME", "/tmp"))
+    engines_cache = cache_root / "prisma-engines"
+    for path in (cache_root, engines_cache):
+        path.mkdir(parents=True, exist_ok=True)
+    env.setdefault("XDG_CACHE_HOME", str(cache_root))
+    env.setdefault("PRISMA_ENGINES_CACHE_DIR", str(engines_cache))
+
     last_error: Exception | None = None
     for cmd in (["prisma", "generate"], [sys.executable, "-m", "prisma", "generate"]):
         try:
-            subprocess.run(cmd, check=True)
+            subprocess.run(cmd, check=True, env=env)
             return
         except FileNotFoundError as exc:
             last_error = exc
